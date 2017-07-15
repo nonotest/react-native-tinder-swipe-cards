@@ -40,19 +40,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'green',
   },
-  maybe: {
-    borderColor: 'blue',
-    borderWidth: 2,
-    position: 'absolute',
-    padding: 20,
-    bottom: 20,
-    borderRadius: 5,
-    right: 20,
-  },
-  maybeText: {
-    fontSize: 16,
-    color: 'blue',
-  },
   nope: {
     borderColor: 'red',
     borderWidth: 2,
@@ -77,7 +64,6 @@ export default class SwipeCards extends Component {
   static propTypes = {
     cards: React.PropTypes.array,
     cardKey: React.PropTypes.string,
-    hasMaybeAction: React.PropTypes.bool,
     loop: React.PropTypes.bool,
     onLoop: React.PropTypes.func,
     allowGestureTermination: React.PropTypes.bool,
@@ -88,15 +74,11 @@ export default class SwipeCards extends Component {
     stackOffsetY: React.PropTypes.number,
     renderNoMoreCards: React.PropTypes.func,
     showYup: React.PropTypes.bool,
-    showMaybe: React.PropTypes.bool,
     showNope: React.PropTypes.bool,
     handleYup: React.PropTypes.func,
-    handleMaybe: React.PropTypes.func,
     handleNope: React.PropTypes.func,
     yupText: React.PropTypes.string,
     yupView: React.PropTypes.element,
-    maybeText: React.PropTypes.string,
-    maybeView: React.PropTypes.element,
     noText: React.PropTypes.string,
     noView: React.PropTypes.element,
     onClickHandler: React.PropTypes.func,
@@ -109,7 +91,6 @@ export default class SwipeCards extends Component {
   static defaultProps = {
     cards: [],
     cardKey: 'key',
-    hasMaybeAction: false,
     loop: false,
     onLoop: () => null,
     allowGestureTermination: true,
@@ -118,13 +99,10 @@ export default class SwipeCards extends Component {
     stackOffsetX: 25,
     stackOffsetY: 0,
     showYup: true,
-    showMaybe: true,
     showNope: true,
     handleYup: (card) => null,
-    handleMaybe: (card) => null,
     handleNope: (card) => null,
     nopeText: "Nope!",
-    maybeText: "Maybe!",
     yupText: "Yup!",
     onClickHandler: () => { alert('tap') },
     onDragStart: () => {},
@@ -157,6 +135,7 @@ export default class SwipeCards extends Component {
 
     this._panResponder = PanResponder.create({
       onStartShouldSetPanResponderCapture: (e, gestureState) => {
+        if (gestureState.dx === 0 && gestureState.dy === 0) return false
         this.props.onDragStart()
         this.lastX = gestureState.moveX;
         this.lastY = gestureState.moveY;
@@ -198,20 +177,17 @@ export default class SwipeCards extends Component {
 
         const hasSwipedHorizontally = Math.abs(this.state.pan.x._value) > SWIPE_THRESHOLD
         const hasSwipedVertically = Math.abs(this.state.pan.y._value) > SWIPE_THRESHOLD
-        if (hasSwipedHorizontally || (hasSwipedVertically && this.props.hasMaybeAction)) {
+        if (hasSwipedHorizontally) {
 
           let cancelled = false;
 
           const hasMovedRight = hasSwipedHorizontally && this.state.pan.x._value > 0
           const hasMovedLeft = hasSwipedHorizontally && this.state.pan.x._value < 0
-          const hasMovedUp = hasSwipedVertically && this.state.pan.y._value < 0
 
           if (hasMovedRight) {
             cancelled = this.props.handleYup(this.state.card);
           } else if (hasMovedLeft) {
             cancelled = this.props.handleNope(this.state.card);
-          } else if (hasMovedUp && this.props.hasMaybeAction) {
-            cancelled = this.props.handleMaybe(this.state.card);
           } else {
             cancelled = true
           }
@@ -485,34 +461,6 @@ export default class SwipeCards extends Component {
     return null;
   }
 
-  renderMaybe() {
-    if (!this.props.hasMaybeAction) return null;
-
-    let {pan} = this.state;
-
-    let maybeOpacity = pan.y.interpolate({ inputRange: [-SWIPE_THRESHOLD, -(SWIPE_THRESHOLD/2)], outputRange: [1, 0], extrapolate: 'clamp' });
-    let maybeScale = pan.x.interpolate({ inputRange: [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD], outputRange: [0, 1, 0], extrapolate: 'clamp' });
-    let animatedMaybeStyles = { transform: [{ scale: maybeScale }], opacity: maybeOpacity };
-
-    if (this.props.renderMaybe) {
-      return this.props.renderMaybe(pan);
-    }
-
-
-    if (this.props.showMaybe) {
-
-      const inner = this.props.maybeView
-        ? this.props.maybeView
-        : <Text style={[styles.maybeText, this.props.maybeTextStyle]}>{this.props.maybeText}</Text>
-
-      return <Animated.View style={[styles.maybe, this.props.maybeStyle, animatedMaybeStyles]}>
-                {inner}
-              </Animated.View>;
-    }
-
-    return null;
-  }
-
   renderYup() {
     let {pan} = this.state;
 
@@ -543,7 +491,6 @@ export default class SwipeCards extends Component {
       <View style={styles.container}>
         {this.props.stack ? this.renderStack() : this.renderCard()}
         {this.renderNope()}
-        {this.renderMaybe()}
         {this.renderYup()}
       </View>
     );
