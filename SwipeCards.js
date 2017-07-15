@@ -145,7 +145,7 @@ export default class SwipeCards extends Component {
 
     this.state = {
       pan: new Animated.ValueXY(0),
-      enter: new Animated.Value(0.5),
+      enter: new Animated.Value(1),
       cards: [].concat(this.props.cards),
       card: this.props.cards[currentIndex[this.guid]],
     };
@@ -183,7 +183,7 @@ export default class SwipeCards extends Component {
         this.props.onDragRelease()
         this.state.pan.flattenOffset();
         let velocity;
-        if (Math.abs(dx) <= 5 && Math.abs(dy) <= 5)   //meaning the gesture did not cover any distance
+        if (this.props.onClickHandler !== null && Math.abs(dx) <= 5 && Math.abs(dy) <= 5)   //meaning the gesture did not cover any distance
         {
           this.props.onClickHandler(this.state.card)
         }
